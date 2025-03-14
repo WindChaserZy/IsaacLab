@@ -16,6 +16,7 @@ from isaaclab.markers import VisualizationMarkers
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
+from isaaclab.sensors.camera import Camera, CameraCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.math import subtract_frame_transforms
 
@@ -70,6 +71,7 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
     )
+    '''
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
@@ -82,6 +84,14 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
         debug_vis=False,
+    )'''
+
+    terrain = TerrainImporterCfg(
+        prim_path="/World/ground",
+        terrain_type="usd",
+        usd_path = "/home/ubuntu/repo/Isaac/Isaac/Environments/Office/office.usd",
+        collision_group=-1,
+        debug_vis=False,
     )
 
     # scene
@@ -89,6 +99,18 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
 
     # robot
     robot: ArticulationCfg = CRAZYFLIE_CFG.replace(prim_path="/World/envs/env_.*/Robot")
+    camera: CameraCfg = CameraCfg(
+        prim_path="/World/envs/env_.*/Robot/body/front_cam",
+        update_period=0.1,
+        height=480,
+        width=640,
+        data_types=["rgb", "distance_to_image_plane"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+        ),
+        offset=CameraCfg.OffsetCfg(pos=(0.510, 0.0, 0.015), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"),
+    )
+
     thrust_to_weight = 1.9
     moment_scale = 0.01
 
@@ -131,7 +153,9 @@ class QuadcopterEnv(DirectRLEnv):
 
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
+        self._camera = Camera(self.cfg.camera)
         self.scene.articulations["robot"] = self._robot
+        self.scene.sensors["camera"] = self._camera
 
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
