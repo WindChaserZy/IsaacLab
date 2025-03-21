@@ -1,2 +1,2 @@
 from cells import cell, point
-from frontier_cluster import frontier
+from frontier_cluster import cluster

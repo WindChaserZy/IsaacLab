@@ -45,3 +45,7 @@ class cell:
     def setUnoccupied(self):
 
         self.occupied = False
+
+    def get_coord(self):
+
+        return np.array([self.x, self.y, self.z])

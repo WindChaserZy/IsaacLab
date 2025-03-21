@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..cluster import cell, point 
+from ..cluster import cell, point, cluster
 
 
 class map_manager:
@@ -10,6 +10,7 @@ class map_manager:
         self.set_border(cfg)
         self.uav_pos = point(cfg.uav_init_x, cfg.uav_init_y, cfg.uav_init_z)
         self.init_map(cfg)
+        self.frontier_list = []
 
     def set_border(self, cfg):
 

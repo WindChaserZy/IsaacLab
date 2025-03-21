@@ -1,6 +1,6 @@
 import numpy as np
 from .cells import point
-from .frontier_cluster import frontier
+from .frontier_cluster import cluster
 
 
 class viewpoint:
@@ -10,11 +10,11 @@ class viewpoint:
         self.dist = dist
         self.angle = angle
 
-    def cal_coverage(self, f:frontier):
+    def cal_coverage(self, f:cluster):
         self.coord = self.cal_coordinate(f)
         pass
 
-    def cal_coordinate(self, f:frontier) -> point:
+    def cal_coordinate(self, f:cluster) -> point:
 
         return None
 
