@@ -228,8 +228,8 @@ class QuadcopterEnv(DirectRLEnv):
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
         self.scene.articulations["robot"] = self._robot
-        self._camera = Camera(self.cfg.camera)
-        self.scene.sensors["camera"] = self._camera
+        #self._camera = Camera(self.cfg.camera)
+        #self.scene.sensors["camera"] = self._camera
         self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
         self.scene.sensors["contact_sensor"] = self._contact_sensor
         self._simple_lidar = RayCaster(self.cfg.simple_lidar)
