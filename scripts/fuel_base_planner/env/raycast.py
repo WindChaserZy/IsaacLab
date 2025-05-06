@@ -334,12 +334,12 @@ class RayCaster:
             return False
         return True
 
-    def step(self, ray_pt: Vector3d) -> bool:
+    def step(self, ray_pt: Vector3d) -> Tuple[bool, Vector3d]:
         
         ray_pt = Vector3d(self.x_, self.y_, self.z_)
 
         if self.x_ == self.endX_ and self.y_ == self.endY_ and self.z_ == self.endZ_:
-            return False
+            return False, ray_pt
 
         if self.tMaxX_ < self.tMaxY_:
             if self.tMaxX_ < self.tMaxZ_:
@@ -356,4 +356,4 @@ class RayCaster:
                 self.z_ += self.stepZ_
                 self.tMaxZ_ += self.tDeltaZ_
 
-        return True
+        return True, ray_pt

@@ -180,4 +180,161 @@ class HeadingPlanner:
         cur_pos = pts[0]
 
         for i in range(len(yaws)):
-            pass
+            start_end = (i == 0 or i == len(yaws) - 1)
+            if start_end:
+                vert = YawVertex(yaws[i], 0, gid)
+                gid += 1
+                yaw_graph.addVertex(vert)
+                layer.append(vert)
+            else:
+                self.initCastFlag(pts[i])
+                vert_num = 2 * self.half_vert_num_ + 1
+                futs = []
+                for j in range(vert_num):
+                    ys = yaws[i] + float(j - self.half_vert_num_) * self.yaw_diff_
+                    futs.append(self.calcInformationGain(pts[i], ys, ctrl_pts, j))
+                
+                for j in range(vert_num):
+                    ys = yaws[i] + float(j - self.half_vert_num_) * self.yaw_diff_
+                    gain = futs[j]
+                    vert = YawVertex(ys, gain, gid)
+                    gid += 1
+                    yaw_graph.addVertex(vert)
+                    layer.append(vert)
+            for v1 in last_layer:
+                for v2 in layer:
+                    yaw_graph.addEdge(v1.id_, v2.id_)
+            last_layer = layer
+
+        vert_path : List[YawVertex] = []
+        vert_path = yaw_graph.dijkstraSearch(0, gid - 1, vert_path)
+        for vert in vert_path:
+            path.append(vert.yaw_)
+        return path
+            
+    def initCastFlag(self, pos: Vector3d):
+        vec = Vector3d(self.far_, self.far_, self.rightbottom_[1])
+        lbi = self.sdf_map_.posToIndex(pos - vec)
+        ubi = self.sdf_map_.posToIndex(pos + vec)
+        self.cast_flags_.reset(lbi, ubi)
+
+    def calcInformationGain(self, pt: Vector3d, yaw: float, ctrl_pts: np.ndarray, task_id: int):
+
+        R_wb = np.array([math.cos(yaw), -math.sin(yaw), 0, math.sin(yaw), math.cos(yaw), 0, 0, 0, 1]).reshape(3, 3)
+        
+        T_wb = np.identity(4)
+        T_wb[:3, :3] = R_wb
+        T_wb[:3, 3] = pt
+
+        T_wc = T_wb @ self.T_bc_
+        R_wc = T_wc[:3, :3]
+        t_wc = T_wc[:3, 3]
+        
+        normals = [self.n_top_, self.n_bottom_, self.n_left_, self.n_right_]
+        for i in range(len(normals)):
+            normal_array = np.array([normals[i].x, normals[i].y, normals[i].z])
+            rotated = R_wc @ normal_array
+            normals[i] = Vector3d(rotated[0], rotated[1], rotated[2])
+
+        lbi, ubi = self.calcFovAABB(R_wc, t_wc)
+
+        resolution = self.sdf_map_.getResolution()
+        origin, size = self.sdf_map_.getRegion()
+        offset = Vector3d(0.5, 0.5, 0.5) - origin / resolution
+
+        gain_pts = []
+        dist12 = (0.0, 0.0)
+        factor = 4
+        gain = 0.0
+
+        for i in range(lbi.x, ubi.x + 1):
+            for j in range(lbi.y, ubi.y + 1):
+                for k in range(lbi.z, ubi.z + 1):
+                    if not (i % factor == 0 and j % factor == 0 and k % factor == 0):
+                        continue
+
+                    pt_idx = Vector3i(i, j, k)
+                    if not self.sdf_map_.getOccupancy(pt_idx) == SDFmap.UNKNOWN:
+                        continue
+                    if not self.sdf_map_.isInBox(pt_idx):
+                        continue
+                    check_pt = self.sdf_map_.indexToPos(pt_idx)
+                    if not self.insideFOV(check_pt, pt, normals):
+                        continue
+                    
+                    flag = self.cast_flags_.getFlag(pt_idx)
+                    if flag == 1:
+                        if self.weight_type_ == CastFlags.UNIFORM:
+                            gain += 1.0
+                        elif self.weight_type_ == CastFlags.NON_UNIFORM:
+                            dist1, dist2 = self.distToPathAndCurPos(check_pt, ctrl_pts)
+                            gain += math.exp(-self.lambda1_ * dist1 - self.lambda2_ * dist2)
+                    elif flag == 0:
+                        result = 1
+                        self.casters_[task_id].setInput(check_pt / resolution, pt / resolution)
+                        ray_pt = Vector3d()
+                        ray_id = Vector3i()
+                        st, ray_pt = self.casters_[task_id].step(ray_pt)
+                        while st:
+                            ray_id = ray_pt + offset
+                            if self.sdf_map_.getOccupancy(ray_id) == SDFmap.UNKNOWN:
+                                result = 2
+                                break
+                        if result == 1:
+                            if self.weight_type_ == CastFlags.UNIFORM:
+                                gain += 1.0
+                            elif self.weight_type_ == CastFlags.NON_UNIFORM:
+                                dist1, dist2 = self.distToPathAndCurPos(check_pt, ctrl_pts)
+                                gain += math.exp(-self.lambda1_ * dist1 - self.lambda2_ * dist2)
+                        self.cast_flags_.setFlag(pt_idx, result)
+    
+    def calcFovAABB(self, R_wc: np.ndarray, t_wc: np.ndarray):
+        vertices = np.zeros((5, 3))
+        vertices[0] = R_wc @ self.lefttop_ + t_wc
+        vertices[1] = R_wc @ self.leftbottom_ + t_wc
+        vertices[2] = R_wc @ self.righttop_ + t_wc
+        vertices[3] = R_wc @ self.rightbottom_ + t_wc
+        vertices[4] = t_wc
+
+        lbd = np.min(vertices, axis=0)
+        ubd = np.max(vertices, axis=0)
+
+        lbd = Vector3d(lbd[0], lbd[1], lbd[2])
+        ubd = Vector3d(ubd[0], ubd[1], ubd[2])
+
+        lbd, ubd = self.sdf_map_.boundBox(lbd, ubd)
+
+        lbi = self.sdf_map_.posToIndex(lbd)
+        ubi = self.sdf_map_.posToIndex(ubd)
+
+        return lbi, ubi
+    
+    def insideFOV(self, pw: Vector3d, pc: Vector3d, normals: List[Vector3d]):
+        dir = pw - pc
+        if dir.norm() > self.far_:
+            return False
+        
+        for n in normals:
+            dot_product = n.x * dir.x + n.y * dir.y + n.z * dir.z
+            if dot_product < 0.1:
+                return False
+        return True
+    
+    def distToPathAndCurPos(self, pt: Vector3d, ctrl_pts: np.ndarray):
+
+        min_squ = float('inf')
+        idx = -1
+        for i in range(ctrl_pts.shape[0]):
+            ctrl_pt = ctrl_pts[i]
+            squ = (ctrl_pt[0] - pt.x)**2 + (ctrl_pt[1] - pt.y)**2 + (ctrl_pt[2] - pt.z)**2
+            if squ < min_squ:
+                min_squ = squ
+                idx = i
+
+        dist_to_pt = np.sqrt(min_squ)
+        dist_along_path = 0.0
+        
+        for i in range(idx):
+            dist_along_path += np.linalg.norm(ctrl_pts[i+1] - ctrl_pts[i])
+
+        return dist_to_pt, dist_along_path
