@@ -7,21 +7,21 @@ class MapROS:
     def __init__(self):
 
         ######### config #########
-        self.fx_ = -1.0
-        self.fy_ = -1.0
-        self.cx_ = -1.0
-        self.cy_ = -1.0
-        self.depth_filter_maxdist_ = -1.0
-        self.depth_filter_mindist_ = -1.0
-        self.depth_filter_margin_ = -1
-        self.k_depth_scaling_factor_ = -1.0
-        self.skip_pixel_ = -1
-        self.edsf_slice_height_ = -0.1
-        self.visualization_truncate_height_ = -0.1
-        self.visualization_truncate_low_ = -0.1
+        self.fx_ = 387.229248046875
+        self.fy_ = 387.229248046875
+        self.cx_ = 321.04638671875
+        self.cy_ = 243.44969177246094
+        self.depth_filter_maxdist_ = 5.0
+        self.depth_filter_mindist_ = 0.2
+        self.depth_filter_margin_ = 2
+        self.k_depth_scaling_factor_ = 1000.0
+        self.skip_pixel_ = 2
+        self.edsf_slice_height_ = 0.3
+        self.visualization_truncate_height_ = 10.09
+        self.visualization_truncate_low_ = 2.0
         self.show_occ_time_ = False
         self.show_esdf_time_ = False
-        self.show_all_map_ = False
+        self.show_all_map_ = True
         self.frame_id_ = "world"
         ##########################
 

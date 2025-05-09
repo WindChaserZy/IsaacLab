@@ -90,18 +90,18 @@ class KinodynamicAstar:
 
     def setParam(self):
         ########## Config ##########
-        self.max_tau_ = -1.0
-        self.init_max_tau_ = -1.0
-        self.max_vel_ = -1.0
-        self.max_acc_ = -1.0
-        self.w_time_ = -1.0
-        self.horizon_ = -1.0
-        self.resolution_ = -1.0
-        self.time_resolution_ = -1.0
-        self.lambda_heu_ = -1.0
-        self.allocate_num_ = -1
-        self.check_num_ = -1
-        self.optimistic_ = True
+        self.max_tau_ = 0.8
+        self.init_max_tau_ = 1.0
+        self.max_vel_ = 2.0
+        self.max_acc_ = 2.0
+        self.w_time_ = 10.0
+        self.horizon_ = 5.0
+        self.resolution_ = 0.025
+        self.time_resolution_ = 0.8
+        self.lambda_heu_ = 10.0
+        self.allocate_num_ = 100000
+        self.check_num_ = 10
+        self.optimistic_ = False
         self.tie_breaker_ = 1.0 + 1.0 / 10000
         vel_mergin = 0.0
         self.max_vel_ += vel_mergin

@@ -48,19 +48,20 @@ class FrontierFinder:
         voxel_num = self.edt_env_.sdf_map_.getVoxelNum()
         self.frontier_flag_ = ['0'] * voxel_num
         #### config to be added
-        self.cluster_min_ = -1
-        self.cluster_size_xy_ = -1.0
-        self.cluster_size_z_ = -1.0
-        self.min_candidate_dist_ = -1.0
-        self.min_candidate_clearance_ = -1.0
-        self.candidate_dphi_ = -1.0
-        self.candidate_rmax_ = -1.0
-        self.candidate_rmin_ = -1.0
-        self.candidate_rnum_ = -1
-        self.down_sample_ = -1
-        self.min_visib_num_ = -1
-        self.min_view_finish_fraction_ = -1.0
+        self.cluster_min_ = 100
+        self.cluster_size_xy_ = 2.0
+        self.cluster_size_z_ = 10.0
+        self.min_candidate_dist_ = 0.75
+        self.min_candidate_clearance_ = 0.21
+        self.candidate_dphi_ = 15 * 3.1415926 / 180
+        self.candidate_rmax_ = 2.5
+        self.candidate_rmin_ = 1.5
+        self.candidate_rnum_ = 3
+        self.down_sample_ = 3
+        self.min_visib_num_ = 15
+        self.min_view_finish_fraction_ = 0.2
         #################################
+        
         self.resolution_ = self.edt_env_.sdf_map_.getResolution()
         origin, size = self.edt_env_.sdf_map_.getRegion()
         self.raycaster_.setParams(self.resolution_, origin)
@@ -323,25 +324,28 @@ class FrontierFinder:
         return True
 
     def computeFrontiersToVisit(self):
-        self.first_new_ftr_ = self.frontiers_[-1]
-        new_num, new_dormant_num = 0, 0
-        for tmp_ftr in self.tmp_frontiers_:
-            tmp_ftr = self.sampleViewpoints(tmp_ftr)
-            if len(tmp_ftr.viewpoints_) > 0:
-                new_num += 1
-                # Sort viewpoints by visibility number (descending)
-                tmp_ftr.viewpoints_.sort(key=lambda x: x.visib_num_, reverse=True)
-                self.frontiers_.append(tmp_ftr)
-                if self.first_new_ftr_ == self.frontiers_[-1]:
-                    self.first_new_ftr_ = tmp_ftr
-            else:
-                # No viewpoints found, add to dormant frontiers
-                self.dormant_frontiers_.append(tmp_ftr)
-                new_dormant_num += 1
-        idx = 0
-        for i, ft in enumerate(self.frontiers_):
-            self.frontiers_[i].id_ = idx
-            idx += 1
+        if len(self.frontiers_) == 0:
+            return
+        else:
+            self.first_new_ftr_ = self.frontiers_[-1]
+            new_num, new_dormant_num = 0, 0
+            for tmp_ftr in self.tmp_frontiers_:
+                tmp_ftr = self.sampleViewpoints(tmp_ftr)
+                if len(tmp_ftr.viewpoints_) > 0:
+                    new_num += 1
+                    # Sort viewpoints by visibility number (descending)
+                    tmp_ftr.viewpoints_.sort(key=lambda x: x.visib_num_, reverse=True)
+                    self.frontiers_.append(tmp_ftr)
+                    if self.first_new_ftr_ == self.frontiers_[-1]:
+                        self.first_new_ftr_ = tmp_ftr
+                else:
+                    # No viewpoints found, add to dormant frontiers
+                    self.dormant_frontiers_.append(tmp_ftr)
+                    new_dormant_num += 1
+            idx = 0
+            for i, ft in enumerate(self.frontiers_):
+                self.frontiers_[i].id_ = idx
+                idx += 1
 
     def getTopViewpointsInfo(self, cur_pos: Vector3d, points: List[Vector3d], yaws: List[float], averages: List[Vector3d]):
         

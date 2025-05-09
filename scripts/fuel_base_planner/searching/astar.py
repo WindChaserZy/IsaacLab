@@ -30,9 +30,9 @@ class AStar:
 
     def __init__(self, env: EDTEnv):
         # Config to be added
-        self.lambda_heu_ = -1.0
-        self.max_search_time_ = -1.0
-        self.resolution_ = -1.0
+        self.lambda_heu_ = 10000.0
+        self.max_search_time_ = 0.001
+        self.resolution_ = 0.2
         self.allocate_num_ = 1000000
         ########################
         self.use_node_num_: int = 0

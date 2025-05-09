@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import gymnasium as gym
 import torch
+import numpy as np
+from sklearn.neighbors import KDTree
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import Articulation, ArticulationCfg
@@ -71,7 +73,7 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
     )
-    '''
+    
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
@@ -84,16 +86,8 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
         debug_vis=False,
-    )'''
-
-    terrain = TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="usd",
-        usd_path = "/home/ubuntu/repo/Isaac/Isaac/Environments/Office/office.usd",
-        collision_group=-1,
-        debug_vis=False,
     )
-
+   
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
 
@@ -118,6 +112,7 @@ class QuadcopterEnvCfg(DirectRLEnvCfg):
     lin_vel_reward_scale = -0.05
     ang_vel_reward_scale = -0.01
     distance_to_goal_reward_scale = 15.0
+    expl_scale = 20.0
 
 
 class QuadcopterEnv(DirectRLEnv):
@@ -139,7 +134,7 @@ class QuadcopterEnv(DirectRLEnv):
             for key in [
                 "lin_vel",
                 "ang_vel",
-                "distance_to_goal",
+                "space_explored",
             ]
         }
         # Get specific body indices
@@ -147,15 +142,18 @@ class QuadcopterEnv(DirectRLEnv):
         self._robot_mass = self._robot.root_physx_view.get_masses()[0].sum()
         self._gravity_magnitude = torch.tensor(self.sim.cfg.gravity, device=self.device).norm()
         self._robot_weight = (self._robot_mass * self._gravity_magnitude).item()
+        self.trees = [None for _ in range(self.num_envs)]
+        self.data_points = [np.empty((0, 3)) for _ in range(self.num_envs)]
+        self.radius = 0.05
 
         # add handle for debug visualization (this is set to a valid handle inside set_debug_vis)
         self.set_debug_vis(self.cfg.debug_vis)
 
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
-        self._camera = Camera(self.cfg.camera)
+        #self._camera = Camera(self.cfg.camera)
         self.scene.articulations["robot"] = self._robot
-        self.scene.sensors["camera"] = self._camera
+        #self.scene.sensors["camera"] = self._camera
 
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
@@ -195,10 +193,27 @@ class QuadcopterEnv(DirectRLEnv):
         ang_vel = torch.sum(torch.square(self._robot.data.root_ang_vel_b), dim=1)
         distance_to_goal = torch.linalg.norm(self._desired_pos_w - self._robot.data.root_pos_w, dim=1)
         distance_to_goal_mapped = 1 - torch.tanh(distance_to_goal / 0.8)
+        cur_pos = self._robot.data.root_pos_w.detach().cpu().numpy()
+        kd_res = []
+        for i in range(self.num_envs):
+            point = cur_pos[i].reshape(1, -1)
+            if self.trees[i] != None:
+                indices = self.trees[i].query_radius(point, r=self.radius)
+                if len(indices[0]) > 0:
+                    kd_res.append(-1)
+                else:
+                    self.data_points[i] = np.vstack([self.data_points[i], point])
+                    self.trees[i] = KDTree(self.data_points[i])
+                    kd_res.append(1)
+            else:
+                self.data_points[i] = np.vstack([self.data_points[i], point])
+                self.trees[i] = KDTree(self.data_points[i])
+                kd_res.append(1)
+        kd_res = torch.Tensor(kd_res).to(lin_vel.device)
         rewards = {
             "lin_vel": lin_vel * self.cfg.lin_vel_reward_scale * self.step_dt,
             "ang_vel": ang_vel * self.cfg.ang_vel_reward_scale * self.step_dt,
-            "distance_to_goal": distance_to_goal_mapped * self.cfg.distance_to_goal_reward_scale * self.step_dt,
+            "space_explored": kd_res * self.cfg.expl_scale * self.step_dt,
         }
         reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
         # Logging

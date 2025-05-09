@@ -13,9 +13,7 @@ class NonUniformBspline:
         self.limit_vel_ = 0.0
         self.limit_acc_ = 0.0 
         self.limit_ratio_ = 0.0
-        
-        if points is not np.array([]) and order is not 0 and interval is not 0.0:
-            self.setUniformBspline(points, order, interval)
+        self.setUniformBspline(points, order, interval)
 
     def setUniformBspline(self, points: np.ndarray, order: int, interval: float):
         self.control_points_ = points
@@ -33,7 +31,10 @@ class NonUniformBspline:
                 self.u_[i] = self.u_[i-1] + self.knot_span_
 
     def setKnot(self, knot):
-        self.u_ = knot
+        if len(knot) >= len(self.u_):
+            self.u_ = knot
+        else:
+            self.u_[:len(knot)] = knot
 
     def getKnot(self):
         return self.u_

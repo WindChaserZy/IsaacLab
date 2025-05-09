@@ -15,6 +15,8 @@ def intbound(s: float, ds: float) -> float:
     # Find the smallest positive t such that s+t*ds is an integer
     if ds < 0:
         return intbound(-s, -ds)
+    elif ds == 0:
+        return intbound(s, 1e-5)
     else:
         s = mod(s, 1)
         # problem is now s+t*ds = 1

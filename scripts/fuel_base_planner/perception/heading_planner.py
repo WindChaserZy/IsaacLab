@@ -139,13 +139,13 @@ class HeadingPlanner:
         self.far_ = 4.5
         
         #########################
-        self.yaw_diff_ = -1.0
-        self.lambda1_ = -1.0
-        self.lambda2_ = -1.0
-        self.half_vert_num_ = -1
-        self.max_yaw_rate_ = -1.0
-        self.w_ = -1.0
-        self.weight_type_ = -1
+        self.yaw_diff_ = 30 * 3.1415926 / 180
+        self.lambda1_ = 2.0
+        self.lambda2_ = 1.0
+        self.half_vert_num_ = 5
+        self.max_yaw_rate_ = 10 * 3.1415926 / 180
+        self.w_ = 20000.0
+        self.weight_type_ = 1
         #########################
 
         top_ang = 0.56125

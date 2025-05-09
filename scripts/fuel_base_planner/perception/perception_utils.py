@@ -13,11 +13,11 @@ class PerceptionUtils:
         self.normals_ : List[Vector3d] = []
 
         # config to be added
-        self.left_angle_ = -1.0
-        self.right_angle_ = -1.0  
-        self.top_angle_ = -1.0
-        self.max_dist_ = -1.0
-        self.vis_dist_ = -1.0
+        self.left_angle_ = 0.69222
+        self.right_angle_ = 0.68901
+        self.top_angle_ = 0.56125
+        self.max_dist_ = 4.5
+        self.vis_dist_ = 1.0
         #####################################
 
         # FOV plane normals in camera frame

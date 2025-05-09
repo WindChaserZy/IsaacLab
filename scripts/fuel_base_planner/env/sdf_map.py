@@ -84,33 +84,33 @@ class SDFmap:
     def initMap(self): 
         
         # Config to be added
-        x_size, y_size, z_size = -1.0, -1.0, -1.0
-        self.mp.resolution_ = -1.0
-        self.mp.obstacles_inflation_ = -1.0
-        self.mp.local_bound_inflate_ = 1.0
-        self.mp.local_map_margin_ = 1
-        self.mp.ground_height_ = 1.0
-        self.mp.default_dist_ = 5.0
-        self.mp.optimistic_ = True
+        x_size, y_size, z_size = 50, 50, 10
+        self.mp.resolution_ = 0.1
+        self.mp.obstacles_inflation_ = 0.199
+        self.mp.local_bound_inflate_ = 0.5
+        self.mp.local_map_margin_ = 50
+        self.mp.ground_height_ = -1.0
+        self.mp.default_dist_ = 0.0
+        self.mp.optimistic_ = False
         self.mp.signed_dist_ = False
 
         self.mp.local_bound_inflate_ = max(self.mp.resolution_, self.mp.local_bound_inflate_)
         self.mp.resolution_inv_ = 1 / self.mp.resolution_
         self.mp.map_origin_ = Vector3d(-x_size / 2, -y_size / 2, self.mp.ground_height_)
         self.mp.map_size_ = Vector3d(x_size, y_size, z_size)
-        self.mp.map_voxel_num_.x = np.ceil(self.mp.map_size_.x / self.mp.resolution_)
-        self.mp.map_voxel_num_.y = np.ceil(self.mp.map_size_.y / self.mp.resolution_)
-        self.mp.map_voxel_num_.z = np.ceil(self.mp.map_size_.z / self.mp.resolution_)
+        self.mp.map_voxel_num_.x = int(np.ceil(self.mp.map_size_.x / self.mp.resolution_))
+        self.mp.map_voxel_num_.y = int(np.ceil(self.mp.map_size_.y / self.mp.resolution_))
+        self.mp.map_voxel_num_.z = int(np.ceil(self.mp.map_size_.z / self.mp.resolution_))
         self.mp.map_min_boundary_ = self.mp.map_origin_
         self.mp.map_max_boundary_ = self.mp.map_origin_ + self.mp.map_size_
 
-        self.mp.p_hit_ = 0.80
+        self.mp.p_hit_ = 0.65
         self.mp.p_miss_ = 0.35
         self.mp.p_min_ = 0.12
-        self.mp.p_max_ = 0.97
+        self.mp.p_max_ = 0.90
         self.mp.p_occ_ = 0.80
-        self.mp.max_ray_length_ = -0.1
-        self.mp.virtual_ceil_height_ = -0.1
+        self.mp.max_ray_length_ = 4.5
+        self.mp.virtual_ceil_height_ = -10
         #########################################################
         self.mp.prob_hit_log_ = logit(self.mp.p_hit_)
         self.mp.prob_miss_log_ = logit(self.mp.p_miss_)
@@ -120,7 +120,7 @@ class SDFmap:
         self.mp.min_occupancy_log_ = logit(self.mp.p_min_)
         self.mp.unknown_flag_ = 0.01
 
-        buffer_size = self.mp.map_voxel_num_.x * self.mp.map_voxel_num_.y * self.mp.map_voxel_num_.z
+        buffer_size = int(self.mp.map_voxel_num_.x * self.mp.map_voxel_num_.y * self.mp.map_voxel_num_.z)
         self.md.occupancy_buffer_ = [self.mp.clampmin_log_ - self.mp.unknown_flag_] * buffer_size
         self.md.occupancy_buffer_inflate_ = array('b', [0] * buffer_size)
         self.md.distance_buffer_neg_ = [self.mp.default_dist_] * buffer_size
@@ -138,14 +138,13 @@ class SDFmap:
         self.md.update_min_ = Vector3d(0, 0, 0)
         self.md.update_max_ = Vector3d(0, 0, 0)
 
-        axis = ['x', 'y', 'z']
         # Config to be added
-        self.mp.box_mind_.x = self.mp.map_min_boundary_.x
-        self.mp.box_mind_.y = self.mp.map_min_boundary_.y
-        self.mp.box_mind_.z = self.mp.map_min_boundary_.z
-        self.mp.box_maxd_.x = self.mp.map_max_boundary_.x
-        self.mp.box_maxd_.y = self.mp.map_max_boundary_.y
-        self.mp.box_maxd_.z = self.mp.map_max_boundary_.z
+        self.mp.box_mind_.x = -10.0
+        self.mp.box_mind_.y = -15.0
+        self.mp.box_mind_.z = 0.0
+        self.mp.box_maxd_.x = 10.0
+        self.mp.box_maxd_.y = 15.0
+        self.mp.box_maxd_.z = 2.0
         #########################################################
 
         self.mp.box_min_ = self.posToIndex(self.mp.box_mind_)
@@ -283,7 +282,10 @@ class SDFmap:
         elif dim == 2:
             v = [0.0] * self.mp.map_voxel_num_.z
             z = [0.0] * (self.mp.map_voxel_num_.z + 1)
-
+        else:
+            v = [0.0] * self.mp.map_voxel_num_.x
+            z = [0.0] * (self.mp.map_voxel_num_.x + 1)
+            
         k = start
         v[start] = start
         z[start] = float('-inf')

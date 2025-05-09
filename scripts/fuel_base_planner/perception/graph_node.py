@@ -25,7 +25,7 @@ class ViewNode(BaseNode):
     yd_ = 0.0
     ydd_ = 0.0
     w_dir_ = 0.0
-    astar_ = AStar(EDTEnv()) #####################
+    astar_ = None 
     caster_ = RayCaster()
     map_ = SDFmap()
 

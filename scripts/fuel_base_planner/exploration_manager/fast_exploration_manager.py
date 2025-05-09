@@ -30,18 +30,18 @@ class FastExplorationManager:
         ######### config #########
 
         self.ep_.refine_local_ = True
-        self.ep_.refined_num_ = -1
-        self.ep_.refined_radius_ = -1.0
-        self.ep_.top_view_num_ = -1
+        self.ep_.refined_num_ = 7
+        self.ep_.refined_radius_ = 5.0
+        self.ep_.top_view_num_ = 15
         self.ep_.max_decay_ = -1.0
         self.ep_.tsp_dir_ = "null"
         self.ep_.relax_time_ = 1.0
 
-        ViewNode.vm_ = -1.0
-        ViewNode.am_ = -1.0
-        ViewNode.yd_ = -1.0
-        ViewNode.ydd_ = -1.0
-        ViewNode.w_dir_ = -1.0
+        ViewNode.vm_ = 2.0
+        ViewNode.am_ = 2.0
+        ViewNode.yd_ = 60 * 3.1415926 / 180
+        ViewNode.ydd_ = 90 * 3.1415926 / 180
+        ViewNode.w_dir_ = 1.5
         ######### config #########
         ViewNode.astar_ = AStar(self.edt_environment_)
         ViewNode.map_ = self.sdf_map_

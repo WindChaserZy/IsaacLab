@@ -22,18 +22,18 @@ class FastPlannerManager:
         self.global_data_ = GlobalTrajData()
         self.plan_data_ = MidPlanData()
         ######## config #################
-        self.pp_.max_vel_ = -1.0
-        self.pp_.max_acc_ = -1.0
-        self.pp_.max_jerk_ = -1.0
+        self.pp_.max_vel_ = 2.0
+        self.pp_.max_acc_ = 2.0
+        self.pp_.max_jerk_ = 4
         self.pp_.accept_vel_ = self.pp_.max_vel_ + 0.5
         self.pp_.accept_acc_ = self.pp_.max_acc_ + 0.5
-        self.pp_.max_yawdot_ = -1.0
-        self.pp_.dynamic_ = -1
-        self.pp_.clearance_ = -1.0
-        self.pp_.local_traj_len_ = -1.0
-        self.pp_.ctrl_pt_dist = -1.0
+        self.pp_.max_yawdot_ = 1.0
+        self.pp_.dynamic_ = 0
+        self.pp_.clearance_ = -0.2
+        self.pp_.local_traj_len_ = 6.0
+        self.pp_.ctrl_pt_dist = 0.35
         self.pp_.bspline_degree_ = 3
-        self.pp_.min_time_ = False
+        self.pp_.min_time_ = True
 
         use_geometric_path = True
         use_kinodynamic_path = True
@@ -58,8 +58,7 @@ class FastPlannerManager:
             for i in range(10):
                 self.bspline_optimizers_[i].setEnvironment(self.edt_environment_)
         if use_active_perception:
-            self.frontier_finder_ = FrontierFinder()
-            self.frontier_finder_.edt_env_ = self.edt_environment_
+            self.frontier_finder_ = FrontierFinder(self.edt_environment_)
             self.heading_planner_ = HeadingPlanner()
             self.heading_planner_.setMap(self.sdf_map_)
             self.visibility_util_ = VisibilityUtil()
@@ -397,6 +396,7 @@ class FastPlannerManager:
 
         # Find range of collision
         t_s = -1.0
+        t_e = 0.0
         tc = t_m
         while tc <= t_mp + 1e-4:
             ptc = initial_traj.evaluateDeBoor(tc)
