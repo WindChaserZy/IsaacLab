@@ -100,8 +100,9 @@ class NonUniformBspline:
         der.setKnot(knot)
         return der
     
-    def getBoundaryStates(self, ks: int, ke: int, start: List[Vector3d], end: List[Vector3d], ders: List['NonUniformBspline']):
+    def getBoundaryStates(self, ks: int, ke: int, start: List[Vector3d], end: List[Vector3d]):
 
+        ders = []
         ders = self.computeDerivative(max(ks, ke), ders)
         dur = self.getTimeSum()
 
@@ -162,15 +163,16 @@ class NonUniformBspline:
         for i in range(num2 + 1, len(self.u_)):
             self.u_[i] += delta_t
 
-    def parameterizeToBspline(self, ts: float, point_set: List[Vector3d], start_end_derivative: List[Vector3d], degree: int, ctrl_pts: np.ndarray):
+    @staticmethod
+    def parameterizeToBspline(ts: float, point_set: List[Vector3d], start_end_derivative: List[Vector3d], degree: int, ctrl_pts: np.ndarray) -> np.ndarray:
 
         if ts <= 0:
             print("[B-spline]:time step error.")
-            return
+            return ctrl_pts
             
         if len(point_set) < 2:
             print(f"[B-spline]:point set have only {len(point_set)} points.")
-            return
+            return ctrl_pts
             
         if len(start_end_derivative) != 4:
             print("[B-spline]:derivatives error.")

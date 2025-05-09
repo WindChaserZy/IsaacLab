@@ -1,7 +1,7 @@
 import math
 
 class Vector3d:
-    def __init__(self, x=1.0, y=0.0, z=0.0):
+    def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
         self.y = y
         self.z = z
@@ -123,4 +123,10 @@ class Vector3d:
             return Vector3d(self.x / k, self.y / k, self.z / k)
         else:
             return Vector3d(0.0, 0.0, 0.0)
+    
+    def listify(self):
+        return [self.x, self.y, self.z]
+    
+    def copy(self):
+        return Vector3d(self.x, self.y, self.z)
     

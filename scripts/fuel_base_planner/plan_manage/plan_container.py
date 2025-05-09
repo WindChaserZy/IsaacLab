@@ -1,11 +1,12 @@
 from ..bspline import NonUniformBspline
 from ..poly_traj import PolynomialTraj
 from ..utils import Vector3d
-from .topo_prm import GraphNode
+from ..searching.topo_prm import GraphNode
 from ..perception import VisiblePair, ViewConstraint
 from typing import List
 import math
 import numpy as np
+import time
 
 class GlobalTrajData:
 
@@ -18,16 +19,17 @@ class GlobalTrajData:
         self.local_end_time_ : float = 0.0
         self.time_change_ : float = 0.0
         self.last_time_inc : float = 0.0
+        self.global_start_time_ : float = 0.0
     
     def localTrajReachTarget(self) -> bool:
 
         return abs(self.local_end_time_ - self.global_duration_) < 1e-3
     
-    def setGlobalTraj(self, traj: PolynomialTraj):
+    def setGlobalTraj(self, traj: PolynomialTraj, global_start_time: float = 0.0):
 
         self.global_traj_ = traj
         self.global_duration_ = self.global_traj_.getTotalTime()
-        
+        self.global_start_time_ = global_start_time
         self.local_traj_.clear()
         self.local_start_time_ = -1
         self.local_end_time_ = -1
@@ -233,7 +235,7 @@ class MidPlanData:
         self.ctrl_pts_ :np.ndarray = np.array([])
         self.no_visib_traj_ :NonUniformBspline = NonUniformBspline()
         self.visib_pairs_ :List[VisiblePair] = []
-        self.view_cons_ :List[ViewConstraint] = []
+        self.view_cons_ :ViewConstraint = ViewConstraint()
 
         # Heading planning
         self.frontiers_ :List[List[Vector3d]] = []

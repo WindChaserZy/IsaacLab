@@ -67,7 +67,8 @@ class AStar:
         self.use_node_num_ = 0
         self.iter_num_ = 0
 
-    def pathLength(self, path: List[Vector3d]) -> float:
+    @staticmethod
+    def pathLength(path: List[Vector3d]) -> float:
         length = 0.0
         if len(path) < 2:
             return length

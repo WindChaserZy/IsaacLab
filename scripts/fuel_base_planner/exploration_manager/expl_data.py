@@ -20,7 +20,7 @@ class FSMData:
         self.start_pt_ = Vector3d()
         self.start_vel_ = Vector3d() 
         self.start_acc_ = Vector3d()
-        self.start_yaw_ = 0.0
+        self.start_yaw_ = Vector3d()
 
         self.start_poss = []  
         self.newest_traj_ = None 

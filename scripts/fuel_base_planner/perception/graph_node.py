@@ -52,13 +52,14 @@ class ViewNode(BaseNode):
         c = self.computeCost(self.pos_, node.pos_, self.yaw_, node.yaw_, self.vel_, self.yaw_dot_, path)
         return c
     
-    def searchPath(self, p1: Vector3d, p2: Vector3d, path: List[Vector3d]):
+    @staticmethod
+    def searchPath(p1: Vector3d, p2: Vector3d, path: List[Vector3d]):
 
         safe = True
         idx = Vector3i()
-        self.caster_.input(p1, p2)
-        while self.caster_.nextId(idx):
-            if self.map_.getInflatedOccupancy(idx) == 1 or self.map_.getOccupancy(idx) == self.map_.UNKNOWN or not self.map_.isInBox(idx):
+        ViewNode.caster_.input(p1, p2)
+        while ViewNode.caster_.nextId(idx):
+            if ViewNode.map_.getInflatedOccupancy(idx) == 1 or ViewNode.map_.getOccupancy(idx) == ViewNode.map_.UNKNOWN or not ViewNode.map_.isInBox(idx):
                 safe = False
                 break
         if safe:
@@ -66,28 +67,29 @@ class ViewNode(BaseNode):
             return (p1 - p2).norm(), path
         res = [0.4]
         for k in range(len(res)):
-            self.astar_.reset()
-            self.astar_.setResolution(res[k])
-            if self.astar_.search(p1, p2) == AStar.REACH_END:
-                path = self.astar_.getPath()
-                return self.astar_.pathLength(path), path
+            ViewNode.astar_.reset()
+            ViewNode.astar_.setResolution(res[k])
+            if ViewNode.astar_.search(p1, p2) == AStar.REACH_END:
+                path = ViewNode.astar_.getPath()
+                return ViewNode.astar_.pathLength(path), path
         path = [p1, p2]
         return 1000, path
 
-    def computeCost(self, p1: Vector3d, p2: Vector3d, y1: float, y2: float, v1: Vector3d, yd1: float, path: List[Vector3d]) -> float:
+    @staticmethod
+    def computeCost(p1: Vector3d, p2: Vector3d, y1: float, y2: float, v1: Vector3d, yd1: float, path: List[Vector3d]) -> float:
 
-        pos_cost, path = self.searchPath(p1, p2, path)
-        pos_cost /= self.vm_
+        pos_cost, path = ViewNode.searchPath(p1, p2, path)
+        pos_cost /= ViewNode.vm_
         
         if v1.norm() > 1e-3:
             dir = (p2 - p1).normalized()
             vdir = v1.normalized()
             diff = math.acos(vdir.x * dir.x + vdir.y * dir.y + vdir.z * dir.z)
-            pos_cost += self.w_dir_ * diff
+            pos_cost += ViewNode.w_dir_ * diff
 
         diff = abs(y1 - y2)
         diff = min(diff, 2 * math.pi - diff)
-        yaw_cost = diff / self.yd_
+        yaw_cost = diff / ViewNode.yd_
 
         return max(pos_cost, yaw_cost)
         

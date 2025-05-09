@@ -26,7 +26,7 @@ class Frontier:
 
 class FrontierFinder:
 
-    def __init__(self):
+    def __init__(self, edt_env: EDTEnv = EDTEnv()):
         
         self.frontier_flag_: List[str] = []
         self.frontiers_: List[Frontier] = []
@@ -35,8 +35,8 @@ class FrontierFinder:
         self.removed_ids_: List[int] = []
         self.next_frontier_: Frontier = Frontier()
         self.first_new_ftr_ = Frontier() 
-
-        self.edt_env_: EDTEnv = EDTEnv()
+    
+        self.edt_env_: EDTEnv = edt_env
         self.raycaster_: RayCaster = RayCaster()
         self.percep_utils_: PerceptionUtils = PerceptionUtils()
 
@@ -322,7 +322,7 @@ class FrontierFinder:
                 return False
         return True
 
-    def computeFrontiersToVisit(self, ftr: Frontier):
+    def computeFrontiersToVisit(self):
         self.first_new_ftr_ = self.frontiers_[-1]
         new_num, new_dormant_num = 0, 0
         for tmp_ftr in self.tmp_frontiers_:
@@ -430,7 +430,7 @@ class FrontierFinder:
         
         return path
 
-    def getFullCostMatrix(self, cur_pos: Vector3d, cur_vel: Vector3d, cur_yaw: float, mat: np.ndarray):
+    def getFullCostMatrix(self, cur_pos: Vector3d, cur_vel: Vector3d, cur_yaw: Vector3d, mat: np.ndarray):
         dimen = len(self.frontiers_)
         mat.resize((dimen + 1, dimen + 1))
         # Fill block for clusters
@@ -447,7 +447,7 @@ class FrontierFinder:
         for frontier in self.frontiers_:
             vj = frontier.viewpoints_[0]
             path = []
-            mat[0,j] = ViewNode().computeCost(cur_pos, vj.pos_, cur_yaw, vj.yaw_, cur_vel, 0.0, path)
+            mat[0,j] = ViewNode().computeCost(cur_pos, vj.pos_, cur_yaw[0], vj.yaw_, cur_vel, cur_yaw[1], path)
             j += 1
 
         return mat
